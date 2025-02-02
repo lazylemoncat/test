@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run test with Python
-        run: python test
+        run: python test.py
 
       # 新增部署步骤
       - name: Deploy to Cloud Server
