@@ -14,6 +14,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      如果是其他类型的文件(例如 Python)
       - name: Run test with Python
         run: python test
+
+      # 新增部署步骤
+      - name: Deploy to Cloud Server
+        env:
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          TARGET_DIR: ${{ secrets.SERVER_TARGET_DIR }}
+        run: |
+          # 安装SSH客户端
+          sudo apt-get update
+          sudo apt-get install -y openssh-client
+
+          # 配置SSH known hosts
+          mkdir -p ~/.ssh
+          ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts
+
+          # 将SSH私钥写入文件
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # 通过SCP上传文件
+          scp -i ~/.ssh/deploy_key -r . $SERVER_USER@$SERVER_IP:$TARGET_DIR
+
+          # 通过SSH执行远程命令
+          ssh -i ~/.ssh/deploy_key $SERVER_USER@$SERVER_IP \
+            "cd $TARGET_DIR && python3 main.py"
